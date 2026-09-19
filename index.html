@@ -1,0 +1,1105 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b1020" />
+  <meta name="description" content="Property Pulse AU — Australian Property Fear & Greed Index and suburb market pulse." />
+  <title>Property Pulse AU</title>
+  <style>
+:root {
+  color-scheme: dark;
+  --bg: #070b16;
+  --panel: #0e1528;
+  --panel-2: #121c33;
+  --line: rgba(255,255,255,.09);
+  --text: #f8fafc;
+  --muted: #94a3b8;
+  --accent: #60a5fa;
+  --fear: #f97316;
+  --extreme-fear: #ef4444;
+  --neutral: #facc15;
+  --greed: #84cc16;
+  --extreme-greed: #22c55e;
+  --radius: 22px;
+  --shadow: 0 24px 70px rgba(0,0,0,.28);
+}
+* { box-sizing: border-box; }
+html { background: var(--bg); }
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background:
+    radial-gradient(circle at 20% -10%, rgba(37,99,235,.18), transparent 35%),
+    radial-gradient(circle at 90% 5%, rgba(249,115,22,.11), transparent 28%),
+    var(--bg);
+  color: var(--text);
+}
+button, input { font: inherit; }
+button { color: inherit; }
+.app-shell { width: min(1180px, calc(100% - 28px)); margin: 0 auto; padding: 30px 0 42px; }
+.topbar { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 24px; }
+.topbar h1, .section-head h2, .hero-side h2, .regional-view h2, .method-dialog h2 { margin: 3px 0 0; letter-spacing: -.035em; }
+.topbar h1 { font-size: clamp(28px, 5vw, 42px); }
+.eyebrow { margin: 0; color: #7dd3fc; font-size: 11px; font-weight: 800; letter-spacing: .16em; }
+.refresh-btn, .text-btn, .region-tab, .close-btn { border: 0; cursor: pointer; }
+.refresh-btn {
+  display: inline-flex; align-items: center; gap: 9px; padding: 11px 15px; border: 1px solid var(--line);
+  border-radius: 12px; background: rgba(255,255,255,.055); box-shadow: inset 0 1px rgba(255,255,255,.05);
+}
+.refresh-btn:hover { background: rgba(255,255,255,.09); }
+.refresh-btn.loading #refreshIcon { animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.region-tabs { display: flex; overflow-x: auto; gap: 8px; padding-bottom: 14px; scrollbar-width: none; }
+.region-tabs::-webkit-scrollbar { display: none; }
+.region-tab { white-space: nowrap; background: transparent; border: 1px solid var(--line); padding: 9px 13px; border-radius: 999px; color: var(--muted); }
+.region-tab span { font-size: 9px; margin-left: 4px; opacity: .65; text-transform: uppercase; letter-spacing: .08em; }
+.region-tab.active { color: white; background: rgba(96,165,250,.13); border-color: rgba(96,165,250,.35); }
+.card { background: linear-gradient(180deg, rgba(18,28,51,.92), rgba(11,17,32,.94)); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+.hero-card { display: grid; grid-template-columns: minmax(0,1.45fr) minmax(280px,.55fr); overflow: hidden; }
+.hero-copy { padding: clamp(24px, 4vw, 42px); }
+.hero-side { padding: 34px; border-left: 1px solid var(--line); background: rgba(255,255,255,.018); }
+.status-row { display: flex; align-items: center; gap: 11px; justify-content: center; }
+.pill { display: inline-flex; align-items: center; border: 1px solid rgba(96,165,250,.24); background: rgba(96,165,250,.09); color: #bae6fd; padding: 5px 9px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+.pill.subtle { color: var(--muted); border-color: var(--line); background: rgba(255,255,255,.03); }
+.muted { color: var(--muted); font-size: 12px; }
+.gauge-wrap { position: relative; width: min(420px, 100%); margin: 0 auto; }
+.gauge { width: 100%; display: block; overflow: visible; }
+.score-overlay { position: absolute; inset: 44% 0 auto; text-align: center; pointer-events: none; }
+.score { font-size: clamp(62px, 12vw, 86px); line-height: .85; font-weight: 850; letter-spacing: -.07em; }
+.category { margin-top: 9px; font-size: 13px; font-weight: 850; letter-spacing: .18em; }
+.category.extreme-fear { color: var(--extreme-fear); }
+.category.fear { color: var(--fear); }
+.category.neutral { color: var(--neutral); }
+.category.greed { color: var(--greed); }
+.category.extreme-greed { color: var(--extreme-greed); }
+.scale-labels { display: flex; justify-content: space-between; color: var(--muted); font-size: 10px; margin: -14px auto 0; max-width: 390px; }
+.summary-text { color: #cbd5e1; font-size: 15px; line-height: 1.65; max-width: 650px; text-align: center; margin: 24px auto 0; }
+.hero-side h2 { font-size: 21px; margin-bottom: 22px; }
+.drivers { display: grid; gap: 16px; }
+.driver { display: grid; grid-template-columns: 1fr auto; gap: 5px 12px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+.driver:last-child { border-bottom: 0; }
+.driver strong { font-size: 13px; }
+.driver .driver-score { font-weight: 800; font-variant-numeric: tabular-nums; }
+.driver p { grid-column: 1 / -1; margin: 0; color: var(--muted); font-size: 12px; line-height: 1.45; }
+.text-btn { margin-top: 22px; padding: 0; background: none; color: #93c5fd; font-size: 13px; font-weight: 700; }
+.section-head { display: flex; align-items: end; justify-content: space-between; gap: 22px; margin: 38px 4px 16px; }
+.section-head.compact { margin: 0 0 22px; }
+.section-head h2 { font-size: clamp(22px, 4vw, 30px); }
+.section-head > p { max-width: 480px; margin: 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
+.components-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.component-card { padding: 19px; min-height: 190px; position: relative; overflow: hidden; }
+.component-card::after { content: ""; position: absolute; width: 100px; height: 100px; border-radius: 50%; right: -30px; top: -35px; background: rgba(96,165,250,.055); }
+.component-head { display: flex; justify-content: space-between; align-items: start; gap: 12px; }
+.component-name { color: #dbeafe; font-size: 12px; font-weight: 700; }
+.component-weight { color: var(--muted); font-size: 10px; }
+.component-value { margin: 23px 0 4px; font-size: 29px; font-weight: 850; letter-spacing: -.04em; }
+.component-scoreline { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--muted); }
+.meter { height: 7px; margin-top: 14px; background: rgba(255,255,255,.06); border-radius: 99px; overflow: hidden; }
+.meter > span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #f97316, #facc15, #22c55e); }
+.component-detail { margin: 14px 0 0; color: var(--muted); font-size: 11px; line-height: 1.45; }
+.history, .sources, .regional-view { margin-top: 22px; padding: clamp(22px, 4vw, 34px); }
+.history-chart { height: 250px; position: relative; border-left: 1px solid var(--line); border-bottom: 1px solid var(--line); margin: 6px 24px 0 45px; }
+.history-chart svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.history-chart line { stroke: rgba(255,255,255,.06); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.history-chart path { fill: none; stroke: #60a5fa; stroke-width: 4; vector-effect: non-scaling-stroke; }
+.history-chart circle { fill: #60a5fa; stroke: #dbeafe; stroke-width: 3; vector-effect: non-scaling-stroke; }
+.chart-grid { position: absolute; left: -40px; top: -2px; bottom: -3px; display: flex; flex-direction: column; justify-content: space-between; color: var(--muted); font-size: 10px; }
+.chart-note { position: absolute; right: 3%; top: 53%; transform: translateY(-50%); border: 1px solid var(--line); border-radius: 12px; background: #101a30; padding: 10px 12px; display: grid; line-height: 1.1; box-shadow: 0 8px 30px rgba(0,0,0,.25); }
+.chart-note strong { font-size: 20px; }
+.chart-note span { color: var(--fear); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .12em; }
+.chart-note small { color: var(--muted); margin-top: 6px; }
+.history-help, .source-note { color: var(--muted); font-size: 11px; margin: 16px 0 0; }
+.sources-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.source-row { display: flex; align-items: center; justify-content: space-between; gap: 18px; border: 1px solid var(--line); border-radius: 14px; padding: 13px 15px; text-decoration: none; color: inherit; background: rgba(255,255,255,.02); }
+.source-row:hover { border-color: rgba(96,165,250,.35); }
+.source-row strong { font-size: 12px; }
+.source-row small { display: block; margin-top: 4px; color: var(--muted); }
+.source-row span { color: #93c5fd; }
+.regional-view h2 { font-size: 34px; margin-bottom: 22px; }
+.regional-placeholder { display: grid; grid-template-columns: 120px 1fr; gap: 24px; align-items: center; padding: 22px; border-radius: 18px; background: rgba(255,255,255,.025); border: 1px solid var(--line); }
+.regional-number { font-size: 70px; font-weight: 850; color: #475569; text-align: center; }
+.regional-placeholder h3 { margin: 0 0 8px; }
+.regional-placeholder p { margin: 0; color: var(--muted); line-height: 1.55; }
+.regional-signals { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 18px; }
+.regional-signal { border: 1px solid var(--line); border-radius: 15px; padding: 16px; }
+.regional-signal small { color: var(--muted); }
+.regional-signal strong { display: block; font-size: 21px; margin: 7px 0 2px; }
+footer { text-align: center; color: #64748b; font-size: 10px; margin-top: 28px; }
+.method-dialog { width: min(760px, calc(100% - 28px)); border: 1px solid var(--line); border-radius: 22px; background: #0c1427; color: var(--text); box-shadow: var(--shadow); padding: 28px; }
+.method-dialog::backdrop { background: rgba(2,6,23,.78); backdrop-filter: blur(6px); }
+.dialog-head { display: flex; justify-content: space-between; gap: 18px; align-items: start; }
+.close-btn { width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,.06); font-size: 24px; }
+.method-dialog > p { color: var(--muted); line-height: 1.55; font-size: 13px; }
+.method-table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+th, td { padding: 11px 10px; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
+th { color: #93c5fd; font-size: 10px; text-transform: uppercase; letter-spacing: .08em; }
+td { color: #cbd5e1; }
+.dialog-note { margin-bottom: 0; }
+.toast { position: fixed; left: 50%; bottom: max(24px, env(safe-area-inset-bottom)); transform: translate(-50%, 20px); opacity: 0; pointer-events: none; padding: 10px 14px; border-radius: 999px; background: #172036; border: 1px solid var(--line); color: #e2e8f0; font-size: 12px; transition: .2s ease; z-index: 10; box-shadow: var(--shadow); }
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+@media (max-width: 900px) {
+  .hero-card { grid-template-columns: 1fr; }
+  .hero-side { border-left: 0; border-top: 1px solid var(--line); }
+  .components-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 620px) {
+  .app-shell { width: min(100% - 20px, 1180px); padding-top: 18px; }
+  .topbar { align-items: start; }
+  .refresh-btn span:last-child { display: none; }
+  .refresh-btn { padding: 10px 12px; }
+  .hero-copy { padding: 22px 16px 26px; }
+  .hero-side { padding: 24px 18px; }
+  .status-row { flex-direction: column; gap: 7px; }
+  .score-overlay { inset: 43% 0 auto; }
+  .scale-labels { font-size: 8px; margin-top: -18px; }
+  .section-head { align-items: start; flex-direction: column; }
+  .components-grid { grid-template-columns: 1fr; }
+  .sources-list { grid-template-columns: 1fr; }
+  .history-chart { margin-left: 36px; margin-right: 8px; }
+  .regional-placeholder { grid-template-columns: 1fr; }
+  .regional-number { text-align: left; }
+  .regional-signals { grid-template-columns: 1fr; }
+}
+
+/* v0.2 additions */
+.brand-line { display:flex; align-items:center; gap:9px; }
+.version-badge { font-size:9px; font-weight:800; letter-spacing:.08em; color:#94a3b8; border:1px solid var(--line); border-radius:999px; padding:3px 6px; }
+.suburb-tab { border-style:dashed; }
+.side-title-row { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:22px; }
+.side-title-row h2 { margin:0; }
+.movement { width:max-content; max-width:100%; margin:16px auto -4px; padding:7px 10px; border-radius:999px; border:1px solid var(--line); font-size:11px; font-weight:800; }
+.movement.up { color:#bef264; background:rgba(132,204,22,.08); border-color:rgba(132,204,22,.22); }
+.movement.down { color:#fdba74; background:rgba(249,115,22,.08); border-color:rgba(249,115,22,.22); }
+.movement.flat { color:var(--muted); }
+.history-actions { display:flex; align-items:center; gap:8px; }
+.mini-btn, .source-link-btn { border:1px solid var(--line); border-radius:10px; padding:7px 10px; color:#cbd5e1; background:rgba(255,255,255,.035); cursor:pointer; text-decoration:none; font:inherit; font-size:11px; font-weight:700; }
+.mini-btn:hover, .source-link-btn:hover { border-color:rgba(96,165,250,.35); background:rgba(96,165,250,.08); }
+.history-axis { display:flex; justify-content:space-between; margin:7px 24px 0 45px; color:#64748b; font-size:9px; }
+.history-category.extreme-fear { color:var(--extreme-fear)!important; }
+.history-category.fear { color:var(--fear)!important; }
+.history-category.neutral { color:var(--neutral)!important; }
+.history-category.greed { color:var(--greed)!important; }
+.history-category.extreme-greed { color:var(--extreme-greed)!important; }
+.empty-source { color:var(--muted); font-size:12px; padding:12px 0; }
+
+.regional-head { display:flex; justify-content:space-between; align-items:flex-start; gap:20px; }
+.coverage-badge { padding:7px 10px; border-radius:999px; border:1px solid rgba(96,165,250,.25); background:rgba(96,165,250,.08); color:#bae6fd; font-size:10px; font-weight:800; white-space:nowrap; }
+.regional-score-layout { display:grid; grid-template-columns:220px 1fr; gap:28px; align-items:center; padding:22px; border-radius:18px; border:1px solid var(--line); background:rgba(255,255,255,.025); }
+.regional-score-card { min-height:165px; border-right:1px solid var(--line); display:flex; flex-direction:column; justify-content:center; align-items:center; }
+.regional-kicker { color:var(--muted); font-size:9px; letter-spacing:.14em; font-weight:850; }
+.regional-score-card > strong, .suburb-score-block > strong { display:block; margin:8px 0 7px; font-size:70px; line-height:.9; letter-spacing:-.07em; }
+.coverage-row { display:flex; justify-content:space-between; gap:15px; color:#cbd5e1; font-size:12px; }
+.coverage-meter { height:9px; background:rgba(255,255,255,.06); border-radius:999px; overflow:hidden; margin-top:9px; }
+.coverage-meter span { display:block; height:100%; border-radius:inherit; background:linear-gradient(90deg,#60a5fa,#22d3ee); }
+.regional-note { color:var(--muted); font-size:13px; line-height:1.6; margin:18px 0 0; }
+.regional-components-head { margin-top:30px!important; }
+.regional-signals { grid-template-columns:repeat(3,minmax(0,1fr)); }
+.signal-label-row { display:flex; justify-content:space-between; gap:8px; }
+.signal-label-row span { color:#64748b; font-size:9px; }
+.regional-signal b { color:#e2e8f0; font-size:11px; }
+.missing-row { display:flex; flex-wrap:wrap; align-items:center; gap:7px; margin-top:14px; color:var(--muted); font-size:10px; }
+.missing-row b { color:#94a3b8; border:1px dashed var(--line); padding:5px 8px; border-radius:999px; font-weight:700; }
+.regional-sources { margin-top:22px; }
+
+.suburb-view { display:grid; gap:20px; }
+.suburb-search-card { display:grid; grid-template-columns:1.15fr .85fr; gap:32px; padding:clamp(22px,4vw,34px); }
+.suburb-search-card h2, .suburb-result h2 { margin:4px 0 10px; font-size:clamp(26px,5vw,36px); letter-spacing:-.04em; }
+.suburb-search-card > div > p:last-child { color:var(--muted); line-height:1.6; max-width:650px; margin:0; }
+.suburb-form { align-self:center; }
+.suburb-form label { display:block; margin-bottom:8px; color:#dbeafe; font-size:11px; font-weight:800; }
+.search-row { display:grid; grid-template-columns:1fr auto; gap:8px; }
+.search-row input { width:100%; border:1px solid var(--line); border-radius:12px; color:var(--text); background:#0a1223; outline:none; padding:12px 13px; }
+.search-row input:focus { border-color:rgba(96,165,250,.55); box-shadow:0 0 0 3px rgba(96,165,250,.08); }
+.search-row button { border:0; border-radius:12px; padding:0 17px; background:#2563eb; color:white; font-weight:800; cursor:pointer; }
+.suburb-form small { display:block; color:#64748b; margin-top:8px; line-height:1.4; }
+.suburb-result { padding:clamp(22px,4vw,34px); }
+.suburb-result-head { display:flex; align-items:flex-start; justify-content:space-between; gap:20px; }
+.suburb-hero-grid { display:grid; grid-template-columns:260px 1fr; gap:28px; margin-top:22px; padding:24px; border:1px solid var(--line); border-radius:18px; background:rgba(255,255,255,.02); }
+.suburb-score-block { display:flex; flex-direction:column; align-items:center; justify-content:center; border-right:1px solid var(--line); }
+.suburb-score-block small { margin-top:10px; color:#64748b; }
+.suburb-summary-block h3 { margin:0 0 8px; font-size:20px; }
+.suburb-summary-block > p { color:var(--muted); line-height:1.6; margin:0; }
+.mini-components { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin-top:18px; }
+.mini-component { border:1px solid var(--line); border-radius:12px; padding:11px; display:grid; grid-template-columns:1fr auto; gap:3px 10px; }
+.mini-component span { color:#cbd5e1; font-size:10px; }
+.mini-component strong { font-size:13px; }
+.mini-component small { grid-column:1/-1; color:#64748b; }
+.property-type-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin-top:18px; }
+.property-type-card { border:1px solid var(--line); border-radius:17px; padding:18px; background:rgba(255,255,255,.018); }
+.type-head { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.type-head h3 { margin:0; }
+.metric-chip { border-radius:999px; padding:5px 8px; font-size:10px; font-weight:800; }
+.metric-chip.positive { color:#bef264; background:rgba(132,204,22,.08); }
+.metric-chip.negative { color:#fca5a5; background:rgba(239,68,68,.08); }
+.metric-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin-top:16px; }
+.metric-grid > div { border-top:1px solid var(--line); padding-top:10px; min-width:0; }
+.metric-grid small { display:block; color:#64748b; font-size:9px; }
+.metric-grid strong { display:block; margin-top:4px; font-size:14px; overflow-wrap:anywhere; }
+.local-method-note { margin-top:16px; padding:13px 15px; border-radius:13px; background:rgba(96,165,250,.055); border:1px solid rgba(96,165,250,.13); color:#94a3b8; font-size:11px; line-height:1.55; }
+.local-method-note strong { color:#bfdbfe; }
+.not-found { padding:28px; text-align:center; }
+.not-found h3 { margin:0 0 8px; }
+.not-found p { color:var(--muted); margin:0 auto; max-width:650px; line-height:1.55; }
+
+@media (max-width: 900px) {
+  .regional-score-layout, .suburb-hero-grid { grid-template-columns:1fr; }
+  .regional-score-card, .suburb-score-block { border-right:0; border-bottom:1px solid var(--line); padding-bottom:22px; }
+  .suburb-search-card { grid-template-columns:1fr; }
+  .regional-signals { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@media (max-width: 620px) {
+  .history-actions { width:100%; justify-content:space-between; }
+  .history-axis { margin-left:36px; margin-right:8px; }
+  .regional-head, .suburb-result-head { flex-direction:column; }
+  .regional-score-layout { padding:16px; gap:18px; }
+  .regional-signals, .property-type-grid, .mini-components { grid-template-columns:1fr; }
+  .suburb-search-card, .suburb-result { padding:20px 16px; }
+  .suburb-hero-grid { padding:16px; }
+  .metric-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .search-row { grid-template-columns:1fr; }
+  .search-row button { padding:11px 15px; }
+  .coverage-badge { white-space:normal; }
+}
+
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div>
+        <div class="brand-line"><p class="eyebrow">PROPERTY PULSE AU</p><span class="version-badge">v0.2</span></div>
+        <h1>Fear &amp; Greed Index</h1>
+      </div>
+      <button id="refreshBtn" class="refresh-btn" type="button" aria-label="Refresh latest property market data">
+        <span id="refreshIcon" aria-hidden="true">↻</span>
+        <span>Refresh</span>
+      </button>
+    </header>
+
+    <nav class="region-tabs" aria-label="Market view">
+      <button class="region-tab active" data-region="australia">Australia</button>
+      <button class="region-tab" data-region="brisbane">Brisbane <span>80% data</span></button>
+      <button class="region-tab" data-region="gold-coast">Gold Coast <span>50% data</span></button>
+      <button class="region-tab" data-region="tweed">Tweed Coast <span>beta</span></button>
+      <button class="region-tab suburb-tab" data-region="suburb">⌕ Suburb Explorer</button>
+    </nav>
+
+    <main>
+      <section id="nationalView">
+        <section class="hero-card card">
+          <div class="hero-copy">
+            <div class="status-row">
+              <span id="dataMode" class="pill">Verified snapshot</span>
+              <span id="updatedAt" class="muted">Updated 19 Sep 2026</span>
+            </div>
+
+            <div class="gauge-wrap" aria-label="Property fear and greed score">
+              <svg class="gauge" viewBox="0 0 320 190" role="img" aria-labelledby="gaugeTitle gaugeDesc">
+                <title id="gaugeTitle">Australian Property Fear and Greed Index</title>
+                <desc id="gaugeDesc">A gauge from zero, extreme fear, to one hundred, extreme greed.</desc>
+                <defs>
+                  <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#ef4444" />
+                    <stop offset="24%" stop-color="#f97316" />
+                    <stop offset="50%" stop-color="#facc15" />
+                    <stop offset="75%" stop-color="#84cc16" />
+                    <stop offset="100%" stop-color="#22c55e" />
+                  </linearGradient>
+                </defs>
+                <path d="M 45 158 A 115 115 0 0 1 275 158" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="24" stroke-linecap="round" />
+                <path d="M 45 158 A 115 115 0 0 1 275 158" fill="none" stroke="url(#gaugeGradient)" stroke-width="20" stroke-linecap="round" />
+                <g id="needleGroup" transform="rotate(-36 160 158)">
+                  <line x1="160" y1="158" x2="160" y2="58" stroke="#f8fafc" stroke-width="4" stroke-linecap="round" />
+                  <circle cx="160" cy="158" r="10" fill="#f8fafc" />
+                  <circle cx="160" cy="158" r="4" fill="#0b1020" />
+                </g>
+              </svg>
+              <div class="score-overlay">
+                <div id="score" class="score">30</div>
+                <div id="category" class="category fear">FEAR</div>
+              </div>
+            </div>
+
+            <div class="scale-labels" aria-hidden="true">
+              <span>Extreme Fear</span><span>Neutral</span><span>Extreme Greed</span>
+            </div>
+
+            <div id="movement" class="movement" hidden></div>
+            <p id="summaryText" class="summary-text">Buyer caution is outweighing competitive demand.</p>
+          </div>
+
+          <aside class="hero-side">
+            <div class="side-title-row"><h2>What moved it?</h2><span class="pill subtle">Fixed formula</span></div>
+            <div id="drivers" class="drivers"></div>
+            <button id="methodBtn" class="text-btn" type="button">View scoring methodology →</button>
+          </aside>
+        </section>
+
+        <section class="section-head">
+          <div><p class="eyebrow">MARKET COMPONENTS</p><h2>Seven signals behind the score</h2></div>
+          <p>Every component is normalised to 0–100 using fixed thresholds, then weighted. A refresh changes the inputs — not the rules.</p>
+        </section>
+        <section id="componentsGrid" class="components-grid"></section>
+
+        <section class="history card">
+          <div class="section-head compact">
+            <div><p class="eyebrow">INDEX HISTORY</p><h2>Your live tracking history</h2></div>
+            <div class="history-actions">
+              <span id="historyCount" class="pill subtle">1 snapshot</span>
+              <button id="exportHistory" class="mini-btn" type="button">Export JSON</button>
+            </div>
+          </div>
+          <div class="history-chart" aria-label="Index history chart">
+            <div class="chart-grid"><span>100</span><span>75</span><span>50</span><span>25</span><span>0</span></div>
+            <svg id="historySvg" viewBox="0 0 800 230" preserveAspectRatio="none" aria-hidden="true">
+              <line x1="0" y1="20" x2="800" y2="20" /><line x1="0" y1="67.5" x2="800" y2="67.5" />
+              <line x1="0" y1="115" x2="800" y2="115" /><line x1="0" y1="162.5" x2="800" y2="162.5" />
+              <line x1="0" y1="210" x2="800" y2="210" />
+              <path id="historyPath" d="" />
+              <g id="historyDots"></g>
+            </svg>
+            <div id="chartNote" class="chart-note"><strong>30</strong><span>Fear</span><small>19 Sep 2026</small></div>
+          </div>
+          <div class="history-axis"><span id="historyFirstDate">19 Sep 2026</span><span id="historyLastDate">19 Sep 2026</span></div>
+          <p class="history-help">Snapshots are stored in this browser after successful refreshes. Cloud history is the next backend step, so the timeline can follow you across devices.</p>
+        </section>
+
+        <section class="sources card">
+          <div class="section-head compact"><div><p class="eyebrow">DATA SOURCES</p><h2>Transparent inputs</h2></div></div>
+          <div id="sourcesList" class="sources-list"></div>
+          <p class="source-note">Independent experimental index. It is not an official Cotality, ABS, Westpac, REA or realestate.com.au product.</p>
+        </section>
+      </section>
+
+      <section id="regionalView" class="regional-view card" hidden>
+        <div class="regional-head">
+          <div><p class="eyebrow">REGIONAL FEAR &amp; GREED · BETA</p><h2 id="regionalTitle">Brisbane</h2><p id="regionalUpdated" class="muted"></p></div>
+          <div id="regionalCoverageBadge" class="coverage-badge">80% formula coverage</div>
+        </div>
+
+        <div id="regionalPublished" class="regional-score-layout">
+          <div class="regional-score-card">
+            <span class="regional-kicker">PARTIAL COMPOSITE</span>
+            <strong id="regionalScore">25</strong>
+            <span id="regionalCategory" class="category fear">FEAR</span>
+          </div>
+          <div>
+            <div class="coverage-row"><span>Data coverage</span><strong id="regionalCoverageText">80%</strong></div>
+            <div class="coverage-meter"><span id="regionalCoverageBar" style="width:80%"></span></div>
+            <p id="regionalNote" class="regional-note"></p>
+          </div>
+        </div>
+
+        <div id="regionalWithheld" class="regional-placeholder" hidden>
+          <div class="regional-number">—</div>
+          <div><h3>Composite score withheld</h3><p id="regionalWithheldText"></p></div>
+        </div>
+
+        <div class="section-head compact regional-components-head"><div><p class="eyebrow">KNOWN SIGNALS</p><h2>What is actually measured</h2></div></div>
+        <div id="regionalSignals" class="regional-signals"></div>
+        <div id="regionalMissing" class="missing-row"></div>
+        <div id="regionalSources" class="sources-list regional-sources"></div>
+      </section>
+
+      <section id="suburbView" class="suburb-view" hidden>
+        <section class="suburb-search-card card">
+          <div>
+            <p class="eyebrow">SUBURB EXPLORER · BETA</p>
+            <h2>How hot is your local market?</h2>
+            <p>Search the launch dataset. The local pulse uses suburb price growth, selling speed, buyer interest and stock absorption — separate from the national seven-factor index.</p>
+          </div>
+          <form id="suburbForm" class="suburb-form">
+            <label for="suburbSearch">Suburb or postcode</label>
+            <div class="search-row">
+              <input id="suburbSearch" list="suburbOptions" autocomplete="off" placeholder="Try Bogangar or 2488" />
+              <datalist id="suburbOptions"></datalist>
+              <button type="submit">Search</button>
+            </div>
+            <small>Launch data: Bogangar, Tweed Heads, Southport, Surfers Paradise, Brisbane City.</small>
+          </form>
+        </section>
+
+        <section id="suburbResult" class="suburb-result card">
+          <div class="suburb-result-head">
+            <div><p class="eyebrow">LOCAL PROPERTY PULSE</p><h2 id="suburbName">Bogangar 2488</h2><p id="suburbRegion" class="muted">Cabarita Beach Region, NSW</p></div>
+            <a id="suburbSourceLink" class="source-link-btn" target="_blank" rel="noopener noreferrer">View source ↗</a>
+          </div>
+
+          <div class="suburb-hero-grid">
+            <div class="suburb-score-block">
+              <span class="regional-kicker">SUBURB PULSE</span>
+              <strong id="suburbScore">59</strong>
+              <span id="suburbCategory" class="category neutral">NEUTRAL</span>
+              <small id="suburbPeriod">Sep 2025 – Aug 2026</small>
+            </div>
+            <div class="suburb-summary-block">
+              <h3 id="suburbSummaryTitle">Mixed local conditions</h3>
+              <p id="suburbSummary"></p>
+              <div id="suburbPulseComponents" class="mini-components"></div>
+            </div>
+          </div>
+
+          <div class="property-type-grid">
+            <article class="property-type-card">
+              <div class="type-head"><h3>Houses</h3><span id="houseGrowth" class="metric-chip"></span></div>
+              <div id="houseMetrics" class="metric-grid"></div>
+            </article>
+            <article class="property-type-card">
+              <div class="type-head"><h3>Units</h3><span id="unitGrowth" class="metric-chip"></span></div>
+              <div id="unitMetrics" class="metric-grid"></div>
+            </article>
+          </div>
+
+          <div class="local-method-note">
+            <strong>Local Pulse formula:</strong> annual price growth 40% · selling speed 25% · buyer interest/listing 20% · stock absorption 15%. This is a local market-heat signal, so it should not be compared point-for-point with the national index.
+          </div>
+        </section>
+
+        <section id="suburbNotFound" class="not-found card" hidden>
+          <h3>That suburb is not in the launch dataset yet.</h3>
+          <p>The interface is ready; the next backend step is an on-demand suburb-data connector so this box can query any Australian suburb instead of relying on seeded profiles.</p>
+        </section>
+      </section>
+    </main>
+
+    <footer><p>Property Pulse AU · Experimental market-sentiment tool, not financial advice.</p></footer>
+  </div>
+
+  <dialog id="methodDialog" class="method-dialog">
+    <div class="dialog-head"><div><p class="eyebrow">METHODOLOGY</p><h2>Fixed national scoring rules</h2></div><button id="closeMethod" class="close-btn" aria-label="Close methodology">×</button></div>
+    <p>The national index uses fixed ranges. Weak or buyer-friendly conditions receive a low “greed” score; strong, competitive conditions receive a high score. Regional beta scores use the same component rules but renormalise only across fields with verified data and always show coverage.</p>
+    <div class="method-table-wrap">
+      <table>
+        <thead><tr><th>Component</th><th>Weight</th><th>0 score</th><th>100 score</th></tr></thead>
+        <tbody>
+          <tr><td>3-month price momentum</td><td>25%</td><td>−6%</td><td>+6%</td></tr>
+          <tr><td>Auction clearance</td><td>15%</td><td>40%</td><td>80%</td></tr>
+          <tr><td>Listings vs 5yr avg</td><td>15%</td><td>+20%</td><td>−20%</td></tr>
+          <tr><td>Annual sales activity</td><td>10%</td><td>−15%</td><td>+15%</td></tr>
+          <tr><td>New mortgage lending q/q</td><td>15%</td><td>−15%</td><td>+15%</td></tr>
+          <tr><td>Selling speed vs year ago</td><td>10%</td><td>50% slower</td><td>50% faster</td></tr>
+          <tr><td>Consumer sentiment</td><td>10%</td><td>70</td><td>130</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="dialog-note">Categories: 0–20 Extreme Fear · 21–40 Fear · 41–60 Neutral · 61–80 Greed · 81–100 Extreme Greed.</p>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script>
+const PROPERTY_PULSE_DATA = {
+  verifiedSnapshot: {
+    updatedAt: '2026-09-19T16:30:00+10:00',
+    mode: 'Verified snapshot',
+    inputs: {
+      priceMomentum3m: -3.1,
+      auctionClearance: 52.6,
+      listingsVs5y: 2.2,
+      salesYoY: -2.7,
+      lendingQoQ: -5.2,
+      sellingSpeed: { current: 39, previous: 28 },
+      consumerSentiment: 84.4
+    },
+    sourcePeriods: {
+      priceMomentum3m: '3 months to Aug 2026',
+      auctionClearance: 'week ending 13 Sep 2026',
+      listingsVs5y: 'Aug 2026',
+      salesYoY: 'year to Aug 2026',
+      lendingQoQ: 'Jun qtr 2026',
+      sellingSpeed: '3 months to Aug 2026',
+      consumerSentiment: 'Sep 2026'
+    },
+    sources: [
+      { name: 'Cotality Housing Market', detail: 'Prices, listings, sales and selling time', url: 'https://www.cotality.com/au/insights/articles/high-end-homes-lead-market-downturn-as-affordable-properties-prove-resilient' },
+      { name: 'Cotality Auction Results', detail: 'Final combined-capital clearance rate', url: 'https://www.cotality.com/au/press-releases/final-clearance-rates-week-ending-13-september' },
+      { name: 'Australian Bureau of Statistics', detail: 'Lending Indicators — June quarter 2026', url: 'https://www.abs.gov.au/statistics/economy/finance/lending-indicators/latest-release' },
+      { name: 'Westpac–Melbourne Institute', detail: 'Consumer Sentiment — September 2026', url: 'https://melbourneinstitute.unimelb.edu.au/research/macroeconomics/latest-news/index-of-consumer-sentiment' }
+    ]
+  },
+
+  regionalMarkets: {
+    brisbane: {
+      title: 'Brisbane',
+      updated: 'September 2026',
+      inputs: {
+        priceMomentum3m: -0.8,
+        auctionClearance: 38.5,
+        listingsVs5y: 16.0,
+        lendingQoQ: -5.2,
+        consumerSentiment: 84.4
+      },
+      periods: {
+        priceMomentum3m: 'Jun–Aug 2026',
+        auctionClearance: 'w/e 13 Sep 2026',
+        listingsVs5y: 'late Aug 2026',
+        lendingQoQ: 'Australia · Jun qtr',
+        consumerSentiment: 'Australia · Sep 2026'
+      },
+      notes: 'Local price, auction and supply signals are blended with national lending and household sentiment. Sales-volume and selling-speed feeds are still missing.',
+      sources: [
+        { name: 'realestate.com.au Home Price Report', detail: 'Brisbane prices fell 0.2% in June, 0.3% in July and 0.3% in August', url: 'https://www.realestate.com.au/news/30000-poorer-in-5-months-brisbane-officially-hits-downturn/' },
+        { name: 'Cotality Auction Results', detail: 'Brisbane final clearance rate 38.5%', url: 'https://www.cotality.com/au/press-releases/final-clearance-rates-week-ending-13-september' },
+        { name: 'Cotality stock reference', detail: 'Brisbane stock reported about 16% above five-year average by late August', url: 'https://www.somners.com/resources/sellingsep2026' }
+      ]
+    },
+    'gold-coast': {
+      title: 'Gold Coast',
+      updated: 'August 2026',
+      inputs: {
+        priceMomentum3m: -0.72,
+        lendingQoQ: -5.2,
+        consumerSentiment: 84.4
+      },
+      periods: {
+        priceMomentum3m: '3 months to Aug 2026',
+        lendingQoQ: 'Australia · Jun qtr',
+        consumerSentiment: 'Australia · Sep 2026'
+      },
+      notes: 'The Coast has a verified local price signal, while credit and sentiment are national macro inputs. Local listings, clearance, sales and selling-speed feeds are not yet consistent enough for a high-confidence composite.',
+      sources: [
+        { name: 'realestate.com.au Home Price Report', detail: 'Gold Coast values −0.72% over the quarter; +5.5% over the year', url: 'https://www.realestate.com.au/news/not-immune-gold-coast-home-price-hits-quarterly-downturn/' }
+      ]
+    },
+    tweed: {
+      title: 'Tweed Coast',
+      updated: 'August 2026',
+      inputs: {
+        lendingQoQ: -5.2,
+        consumerSentiment: 84.4
+      },
+      periods: {
+        lendingQoQ: 'Australia · Jun qtr',
+        consumerSentiment: 'Australia · Sep 2026'
+      },
+      notes: 'Only shared macro inputs are available at the regional level, so a Tweed Coast composite is intentionally withheld. Use Suburb Explorer for current Tweed Heads and Bogangar local profiles.',
+      sources: []
+    }
+  },
+
+  suburbs: {
+    'bogangar-2488': {
+      name: 'Bogangar', postcode: '2488', state: 'NSW', region: 'Cabarita Beach Region', updated: 'Sep 2025 – Aug 2026',
+      url: 'https://www.realestate.com.au/nsw/bogangar-2488/',
+      houses: { median: 1770000, annualGrowth: 11.3, listings: 12, sold: 36, days: 55, buyers: 648, rent: 1200, yield: 3.4 },
+      units: { median: 1060000, annualGrowth: -4.5, listings: 5, sold: 39, days: 38, buyers: 97, rent: 863, yield: 4.0 }
+    },
+    'tweed-heads-2485': {
+      name: 'Tweed Heads', postcode: '2485', state: 'NSW', region: 'Tweed Shire', updated: 'Sep 2025 – Aug 2026',
+      url: 'https://www.realestate.com.au/nsw/tweed-heads-2485/',
+      houses: { median: 1580000, annualGrowth: -3.1, listings: 19, sold: 59, days: 44, buyers: 1347, rent: 1150, yield: 3.9 },
+      units: { median: 950000, annualGrowth: 8.6, listings: 65, sold: 231, days: 34, buyers: 1955, rent: 790, yield: 4.6 }
+    },
+    'southport-4215': {
+      name: 'Southport', postcode: '4215', state: 'QLD', region: 'Gold Coast', updated: 'Sep 2025 – Aug 2026',
+      url: 'https://www.realestate.com.au/qld/southport-4215/',
+      houses: { median: 1230000, annualGrowth: 10.8, listings: 91, sold: 237, days: 32, buyers: 3281, rent: 880, yield: 3.5 },
+      units: { median: 810000, annualGrowth: 16.6, listings: 233, sold: 647, days: 36, buyers: 3758, rent: 750, yield: 4.9 }
+    },
+    'surfers-paradise-4217': {
+      name: 'Surfers Paradise', postcode: '4217', state: 'QLD', region: 'Gold Coast', updated: 'Sep 2025 – Aug 2026',
+      url: 'https://www.realestate.com.au/qld/surfers-paradise-4217/',
+      houses: { median: 2130000, annualGrowth: 21.7, listings: 82, sold: 209, days: 71, buyers: 2526, rent: 1200, yield: 3.0 },
+      units: { median: 870000, annualGrowth: 7.7, listings: 510, sold: 1157, days: 46, buyers: 7249, rent: 765, yield: 4.8 }
+    },
+    'brisbane-city-4000': {
+      name: 'Brisbane City', postcode: '4000', state: 'QLD', region: 'Brisbane', updated: 'Sep 2025 – Aug 2026',
+      url: 'https://www.realestate.com.au/qld/brisbane-city-4000/',
+      houses: { median: 1480000, annualGrowth: 44.5, listings: 11, sold: 13, days: 43, buyers: 5, rent: 750, yield: 2.4 },
+      units: { median: 775000, annualGrowth: 7.7, listings: 205, sold: 604, days: 37, buyers: 4056, rent: 800, yield: 5.5 }
+    }
+  }
+};
+
+window.PROPERTY_PULSE_DATA = PROPERTY_PULSE_DATA;
+
+  </script>
+  <script>
+(function (root) {
+  const clamp = (n, min = 0, max = 100) => Math.min(max, Math.max(min, n));
+  const linear = (value, low, high) => clamp(((value - low) / (high - low)) * 100);
+
+  const definitions = {
+    priceMomentum3m: {
+      label: 'Price momentum', weight: 0.25, unit: '% / 3m',
+      score: (v) => linear(v, -6, 6),
+      display: (v) => `${v > 0 ? '+' : ''}${v.toFixed(2).replace(/0$/, '').replace(/\.0$/, '')}%`,
+      detail: 'Dwelling value change over three months.'
+    },
+    auctionClearance: {
+      label: 'Auction demand', weight: 0.15, unit: 'clearance',
+      score: (v) => linear(v, 40, 80),
+      display: (v) => `${v.toFixed(1)}%`,
+      detail: 'Final auction clearance rate.'
+    },
+    listingsVs5y: {
+      label: 'Property supply', weight: 0.15, unit: 'vs 5yr avg',
+      score: (v) => linear(-v, -20, 20),
+      display: (v) => `${v > 0 ? '+' : ''}${v.toFixed(1)}%`,
+      detail: 'Listings versus the five-year average. More stock lowers the score.'
+    },
+    salesYoY: {
+      label: 'Sales activity', weight: 0.10, unit: 'annual',
+      score: (v) => linear(v, -15, 15),
+      display: (v) => `${v > 0 ? '+' : ''}${v.toFixed(1)}%`,
+      detail: 'Annual change in sales volumes.'
+    },
+    lendingQoQ: {
+      label: 'Mortgage demand', weight: 0.15, unit: 'q/q',
+      score: (v) => linear(v, -15, 15),
+      display: (v) => `${v > 0 ? '+' : ''}${v.toFixed(1)}%`,
+      detail: 'Quarterly change in the value of new dwelling loan commitments.'
+    },
+    sellingSpeed: {
+      label: 'Selling speed', weight: 0.10, unit: 'days',
+      score: (v) => {
+        const speedChangePct = ((v.previous - v.current) / v.previous) * 100;
+        return linear(speedChangePct, -50, 50);
+      },
+      display: (v) => `${v.current} days`,
+      detail: (v) => `Median time on market; ${v.previous} days a year earlier.`
+    },
+    consumerSentiment: {
+      label: 'Consumer sentiment', weight: 0.10, unit: 'index',
+      score: (v) => linear(v, 70, 130),
+      display: (v) => v.toFixed(1),
+      detail: 'Westpac–Melbourne Institute Consumer Sentiment Index.'
+    }
+  };
+
+  function hasValue(v) {
+    if (v === null || v === undefined) return false;
+    if (typeof v === 'number') return Number.isFinite(v);
+    if (typeof v === 'object') return Object.values(v).every(x => Number.isFinite(x));
+    return true;
+  }
+
+  function componentFor(key, value) {
+    const def = definitions[key];
+    const score = def.score(value);
+    return {
+      key, label: def.label, weight: def.weight, unit: def.unit,
+      value, score,
+      display: def.display(value),
+      detail: typeof def.detail === 'function' ? def.detail(value) : def.detail,
+      contribution: score * def.weight
+    };
+  }
+
+  function calculate(inputs) {
+    const components = Object.entries(definitions).map(([key]) => componentFor(key, inputs[key]));
+    const raw = components.reduce((sum, c) => sum + c.contribution, 0);
+    const score = Math.round(raw);
+    return { score, raw, coverage: 1, category: categoryFor(score), components, missing: [] };
+  }
+
+  function calculatePartial(inputs) {
+    const components = [];
+    const missing = [];
+    let weighted = 0;
+    let coverage = 0;
+    for (const [key, def] of Object.entries(definitions)) {
+      if (hasValue(inputs[key])) {
+        const c = componentFor(key, inputs[key]);
+        components.push(c);
+        weighted += c.contribution;
+        coverage += def.weight;
+      } else {
+        missing.push({ key, label: def.label, weight: def.weight });
+      }
+    }
+    const raw = coverage ? weighted / coverage : 0;
+    const score = Math.round(raw);
+    return { score, raw, coverage, category: categoryFor(score), components, missing };
+  }
+
+  function calculateLocalPulse(profile) {
+    const types = [profile.houses, profile.units].filter(Boolean);
+    const soldTotal = types.reduce((s, p) => s + p.sold, 0);
+    const listingsTotal = types.reduce((s, p) => s + p.listings, 0);
+    const buyersTotal = types.reduce((s, p) => s + p.buyers, 0);
+    const weighted = (field) => soldTotal ? types.reduce((s, p) => s + p[field] * p.sold, 0) / soldTotal : 0;
+
+    const annualGrowth = weighted('annualGrowth');
+    const daysOnMarket = weighted('days');
+    const buyersPerListing = listingsTotal ? buyersTotal / listingsTotal : 0;
+    const absorption = listingsTotal ? soldTotal / (listingsTotal * 12) : 0;
+
+    const components = [
+      { key: 'annualGrowth', label: 'Annual price growth', weight: .40, value: annualGrowth, score: linear(annualGrowth, -10, 15), display: `${annualGrowth >= 0 ? '+' : ''}${annualGrowth.toFixed(1)}%`, detail: 'Sold-volume weighted house/unit annual median-price growth.' },
+      { key: 'daysOnMarket', label: 'Selling speed', weight: .25, value: daysOnMarket, score: linear(-daysOnMarket, -90, -20), display: `${Math.round(daysOnMarket)} days`, detail: 'Sold-volume weighted median days on market. Faster sales score higher.' },
+      { key: 'buyersPerListing', label: 'Buyer interest', weight: .20, value: buyersPerListing, score: linear(buyersPerListing, 5, 50), display: `${buyersPerListing.toFixed(1)}×`, detail: 'Reported buyer interest divided by properties available in the past month.' },
+      { key: 'absorption', label: 'Stock absorption', weight: .15, value: absorption, score: linear(absorption, .15, .75), display: `${(absorption * 100).toFixed(0)}%`, detail: 'Annual sales relative to twelve times the current monthly listing count.' }
+    ].map(c => ({ ...c, contribution: c.score * c.weight }));
+
+    const raw = components.reduce((s, c) => s + c.contribution, 0);
+    const score = Math.round(raw);
+    return { score, raw, category: categoryFor(score), components, metrics: { annualGrowth, daysOnMarket, buyersPerListing, absorption, soldTotal, listingsTotal } };
+  }
+
+  function categoryFor(score) {
+    if (score <= 20) return { label: 'Extreme Fear', className: 'extreme-fear' };
+    if (score <= 40) return { label: 'Fear', className: 'fear' };
+    if (score <= 60) return { label: 'Neutral', className: 'neutral' };
+    if (score <= 80) return { label: 'Greed', className: 'greed' };
+    return { label: 'Extreme Greed', className: 'extreme-greed' };
+  }
+
+  root.PropertyIndexScoring = { calculate, calculatePartial, calculateLocalPulse, categoryFor, definitions, clamp, linear };
+})(window);
+
+  </script>
+  <script>
+const DATA = window.PROPERTY_PULSE_DATA;
+const VERIFIED_SNAPSHOT = DATA.verifiedSnapshot;
+const REGIONAL_MARKETS = DATA.regionalMarkets;
+const SUBURBS = DATA.suburbs;
+const HISTORY_KEY = 'property-pulse-au-history-v2';
+
+let state = VERIFIED_SNAPSHOT;
+let currentView = 'australia';
+let currentSuburbKey = 'bogangar-2488';
+let toastTimer;
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+
+function render(snapshot, { record = true } = {}) {
+  state = snapshot;
+  const result = PropertyIndexScoring.calculate(snapshot.inputs);
+  const { score, category, components } = result;
+
+  $('score').textContent = score;
+  $('category').textContent = category.label.toUpperCase();
+  $('category').className = `category ${category.className}`;
+  $('dataMode').textContent = snapshot.mode || 'Live';
+  $('updatedAt').textContent = formatUpdated(snapshot.updatedAt);
+
+  const angle = -90 + (score / 100) * 180;
+  $('needleGroup').setAttribute('transform', `rotate(${angle} 160 158)`);
+
+  $('summaryText').textContent = summaryFor(score, components);
+  renderDrivers(components);
+  renderComponents(components, snapshot.sourcePeriods || {});
+  renderSources(snapshot.sources || VERIFIED_SNAPSHOT.sources);
+
+  if (record) recordHistory(snapshot, result);
+  const history = getHistory();
+  renderMovement(history, score);
+  renderHistory(history);
+
+  if (currentView !== 'australia' && currentView !== 'suburb') renderRegional(currentView);
+}
+
+function renderDrivers(components) {
+  const sorted = [...components].sort((a, b) => a.score - b.score).slice(0, 3);
+  $('drivers').innerHTML = sorted.map(c => `
+    <div class="driver">
+      <strong>${esc(c.label)}</strong><span class="driver-score">${Math.round(c.score)}/100</span>
+      <p>${esc(c.detail)}</p>
+    </div>
+  `).join('');
+}
+
+function renderComponents(components, periods) {
+  $('componentsGrid').innerHTML = components.map(c => `
+    <article class="component-card card">
+      <div class="component-head"><div class="component-name">${esc(c.label)}</div><div class="component-weight">${Math.round(c.weight * 100)}% weight</div></div>
+      <div class="component-value">${esc(c.display)}</div>
+      <div class="component-scoreline"><span>${esc(periods[c.key] || c.unit)}</span><strong>${Math.round(c.score)}/100</strong></div>
+      <div class="meter"><span style="width:${c.score.toFixed(1)}%"></span></div>
+      <p class="component-detail">${esc(c.detail)}</p>
+    </article>
+  `).join('');
+}
+
+function renderSources(sources) {
+  $('sourcesList').innerHTML = sourceRows(sources);
+}
+
+function sourceRows(sources) {
+  if (!sources?.length) return '<div class="empty-source">No local source links added yet.</div>';
+  return sources.map(s => `
+    <a class="source-row" href="${esc(s.url)}" target="_blank" rel="noopener noreferrer">
+      <div><strong>${esc(s.name)}</strong><small>${esc(s.detail)}</small></div><span>↗</span>
+    </a>
+  `).join('');
+}
+
+function renderMovement(history, score) {
+  const el = $('movement');
+  const prior = [...history].reverse().find(h => h.score !== score || h.date !== dateKey(state.updatedAt));
+  if (!prior) { el.hidden = true; return; }
+  const delta = score - prior.score;
+  el.hidden = false;
+  el.className = `movement ${delta > 0 ? 'up' : delta < 0 ? 'down' : 'flat'}`;
+  el.textContent = delta === 0 ? `No change from ${formatShortDate(prior.updatedAt)}` : `${delta > 0 ? '↑' : '↓'} ${Math.abs(delta)} points since ${formatShortDate(prior.updatedAt)}`;
+}
+
+function renderHistory(history) {
+  const items = history.slice(-24);
+  $('historyCount').textContent = `${history.length} snapshot${history.length === 1 ? '' : 's'}`;
+  const path = $('historyPath');
+  const dots = $('historyDots');
+  dots.replaceChildren();
+
+  if (!items.length) {
+    path.setAttribute('d', '');
+    return;
+  }
+
+  const points = items.map((h, i) => {
+    const x = items.length === 1 ? 735 : 25 + (i / (items.length - 1)) * 735;
+    const y = 20 + ((100 - h.score) / 100) * 190;
+    return { ...h, x, y };
+  });
+
+  path.setAttribute('d', points.map((p, i) => `${i ? 'L' : 'M'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' '));
+  points.forEach((p, i) => {
+    const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    c.setAttribute('cx', p.x.toFixed(1)); c.setAttribute('cy', p.y.toFixed(1)); c.setAttribute('r', i === points.length - 1 ? '7' : '4');
+    dots.appendChild(c);
+  });
+
+  const last = points.at(-1);
+  const cat = PropertyIndexScoring.categoryFor(last.score);
+  const note = $('chartNote');
+  note.style.top = `${(last.y / 230) * 100}%`;
+  note.querySelector('strong').textContent = last.score;
+  note.querySelector('span').textContent = cat.label;
+  note.querySelector('span').className = `history-category ${cat.className}`;
+  note.querySelector('small').textContent = formatShortDate(last.updatedAt);
+  $('historyFirstDate').textContent = formatShortDate(points[0].updatedAt);
+  $('historyLastDate').textContent = formatShortDate(last.updatedAt);
+}
+
+function getHistory() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+    return Array.isArray(parsed) ? parsed : [];
+  } catch { return []; }
+}
+
+function recordHistory(snapshot, result) {
+  try {
+    const history = getHistory();
+    const entry = {
+      date: dateKey(snapshot.updatedAt), updatedAt: snapshot.updatedAt, score: result.score,
+      category: result.category.label, mode: snapshot.mode || 'Live', inputs: snapshot.inputs
+    };
+    const idx = history.findIndex(h => h.date === entry.date);
+    if (idx >= 0) history[idx] = entry; else history.push(entry);
+    history.sort((a,b) => new Date(a.updatedAt) - new Date(b.updatedAt));
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(-60)));
+  } catch (e) { console.warn('History storage unavailable', e); }
+}
+
+function exportHistory() {
+  const payload = { app: 'Property Pulse AU', exportedAt: new Date().toISOString(), history: getHistory() };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = `property-pulse-history-${dateKey(new Date().toISOString())}.json`; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 500);
+}
+
+function summaryFor(score, components) {
+  const weakest = [...components].sort((a,b) => a.score - b.score).slice(0,3).map(c => c.label.toLowerCase());
+  if (score <= 20) return `Market conditions are strongly defensive. The weakest signals are ${joinNatural(weakest)}.`;
+  if (score <= 40) return `Buyer caution is outweighing competitive demand. The main drags are ${joinNatural(weakest)}.`;
+  if (score <= 60) return 'The market is balanced overall, with stronger and weaker signals broadly offsetting each other.';
+  if (score <= 80) return 'Competitive buyer behaviour is outweighing caution, with demand and momentum running above neutral levels.';
+  return 'The market is showing unusually strong competitive behaviour across several demand and momentum indicators.';
+}
+
+function joinNatural(items) {
+  if (items.length < 2) return items[0] || '';
+  return `${items.slice(0,-1).join(', ')} and ${items.at(-1)}`;
+}
+
+function formatUpdated(iso) {
+  try { return `Updated ${new Intl.DateTimeFormat('en-AU', { day:'numeric', month:'short', year:'numeric', hour:'numeric', minute:'2-digit' }).format(new Date(iso))}`; }
+  catch { return 'Updated recently'; }
+}
+function formatShortDate(iso) {
+  try { return new Intl.DateTimeFormat('en-AU', { day:'numeric', month:'short', year:'numeric' }).format(new Date(iso)); }
+  catch { return iso; }
+}
+function dateKey(iso) { return String(iso).slice(0, 10); }
+
+async function refreshData() {
+  const btn = $('refreshBtn');
+  btn.classList.add('loading'); btn.disabled = true;
+  const suburbMode = currentView === 'suburb';
+  showToast(suburbMode ? 'Refreshing suburb profile…' : 'Checking latest market data…');
+  try {
+    if (suburbMode) {
+      const res = await fetch(`/api/suburb?key=${encodeURIComponent(currentSuburbKey)}`, { cache: 'no-store' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const fresh = await res.json();
+      if (!fresh?.houses || !fresh?.units) throw new Error('Invalid suburb response');
+      SUBURBS[currentSuburbKey] = { ...SUBURBS[currentSuburbKey], ...fresh };
+      renderSuburb(SUBURBS[currentSuburbKey], currentSuburbKey);
+      showToast(`${fresh.mode || 'Suburb'} · ${PropertyIndexScoring.calculateLocalPulse(fresh).score}/100`);
+    } else {
+      const res = await fetch('/api/market', { cache: 'no-store' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const fresh = await res.json();
+      if (!fresh?.inputs) throw new Error('Invalid response');
+      render(fresh);
+      showToast(`Updated: ${PropertyIndexScoring.calculate(fresh.inputs).score}/100`);
+    }
+  } catch (err) {
+    console.warn('Live refresh unavailable; keeping last snapshot.', err);
+    if (!suburbMode) render({ ...state, mode: `${state.mode || 'Snapshot'} · live feed unavailable` }, { record: false });
+    showToast('Live feed unavailable — kept the last verified snapshot');
+  } finally {
+    btn.classList.remove('loading'); btn.disabled = false;
+  }
+}
+
+function showToast(message) {
+  clearTimeout(toastTimer); const toast = $('toast'); toast.textContent = message; toast.classList.add('show');
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 2800);
+}
+
+function switchRegion(region) {
+  currentView = region;
+  document.querySelectorAll('.region-tab').forEach(b => b.classList.toggle('active', b.dataset.region === region));
+  $('nationalView').hidden = region !== 'australia';
+  $('regionalView').hidden = !['brisbane','gold-coast','tweed'].includes(region);
+  $('suburbView').hidden = region !== 'suburb';
+  if (['brisbane','gold-coast','tweed'].includes(region)) renderRegional(region);
+  if (region === 'suburb' && !$('suburbSearch').value) renderSuburb(SUBURBS[currentSuburbKey], currentSuburbKey);
+}
+
+function renderRegional(region) {
+  const info = REGIONAL_MARKETS[region];
+  const inputs = { ...info.inputs };
+  if ('lendingQoQ' in inputs && state.inputs?.lendingQoQ !== undefined) inputs.lendingQoQ = state.inputs.lendingQoQ;
+  if ('consumerSentiment' in inputs && state.inputs?.consumerSentiment !== undefined) inputs.consumerSentiment = state.inputs.consumerSentiment;
+  const result = PropertyIndexScoring.calculatePartial(inputs);
+  const coveragePct = Math.round(result.coverage * 100);
+
+  $('regionalTitle').textContent = info.title;
+  $('regionalUpdated').textContent = `Inputs current to ${info.updated}`;
+  $('regionalCoverageBadge').textContent = `${coveragePct}% formula coverage`;
+  $('regionalCoverageText').textContent = `${coveragePct}%`;
+  $('regionalCoverageBar').style.width = `${coveragePct}%`;
+  $('regionalNote').textContent = info.notes;
+
+  const publish = result.coverage >= .5;
+  $('regionalPublished').hidden = !publish;
+  $('regionalWithheld').hidden = publish;
+  if (publish) {
+    $('regionalScore').textContent = result.score;
+    $('regionalCategory').textContent = result.category.label.toUpperCase();
+    $('regionalCategory').className = `category ${result.category.className}`;
+  } else {
+    $('regionalWithheldText').textContent = info.notes;
+  }
+
+  $('regionalSignals').innerHTML = result.components.map(c => `
+    <div class="regional-signal">
+      <div class="signal-label-row"><small>${esc(c.label)}</small><span>${Math.round(c.weight*100)}%</span></div>
+      <strong>${esc(c.display)}</strong>
+      <div class="component-scoreline"><span>${esc(info.periods?.[c.key] || c.unit)}</span><b>${Math.round(c.score)}/100</b></div>
+      <div class="meter"><span style="width:${c.score.toFixed(1)}%"></span></div>
+    </div>
+  `).join('');
+
+  $('regionalMissing').innerHTML = result.missing.length ? `<span>Missing:</span>${result.missing.map(m => `<b>${esc(m.label)}</b>`).join('')}` : '<span>All seven inputs available</span>';
+  $('regionalSources').innerHTML = sourceRows(info.sources);
+}
+
+function setupSuburbOptions() {
+  $('suburbOptions').innerHTML = Object.values(SUBURBS).map(p => `<option value="${esc(p.name)} ${esc(p.postcode)}">${esc(p.region)}, ${esc(p.state)}</option>`).join('');
+}
+
+function findSuburb(query) {
+  const q = query.trim().toLowerCase().replace(/[,]/g, ' ');
+  if (!q) return null;
+  const match = Object.entries(SUBURBS).find(([,p]) => {
+    const hay = `${p.name} ${p.postcode} ${p.state} ${p.region}`.toLowerCase();
+    const tokens = q.split(/\s+/).filter(Boolean);
+    return tokens.every(t => hay.includes(t));
+  });
+  return match ? { key: match[0], profile: match[1] } : null;
+}
+
+function renderSuburb(profile, key = currentSuburbKey) {
+  currentSuburbKey = key;
+  $('suburbNotFound').hidden = true; $('suburbResult').hidden = false;
+  const result = PropertyIndexScoring.calculateLocalPulse(profile);
+  $('suburbName').textContent = `${profile.name} ${profile.postcode}`;
+  $('suburbRegion').textContent = `${profile.region}, ${profile.state}`;
+  $('suburbSourceLink').href = profile.url;
+  $('suburbScore').textContent = result.score;
+  $('suburbCategory').textContent = result.category.label.toUpperCase();
+  $('suburbCategory').className = `category ${result.category.className}`;
+  $('suburbPeriod').textContent = profile.updated;
+
+  const sorted = [...result.components].sort((a,b) => a.score - b.score);
+  const strongest = sorted.at(-1); const weakest = sorted[0];
+  $('suburbSummaryTitle').textContent = localHeadline(result.score);
+  $('suburbSummary').textContent = `${strongest.label} is the strongest local signal (${Math.round(strongest.score)}/100), while ${weakest.label.toLowerCase()} is the weakest (${Math.round(weakest.score)}/100). Houses and units are combined using actual sales volumes where appropriate.`;
+
+  $('suburbPulseComponents').innerHTML = result.components.map(c => `
+    <div class="mini-component"><span>${esc(c.label)}</span><strong>${esc(c.display)}</strong><small>${Math.round(c.score)}/100</small></div>
+  `).join('');
+
+  renderPropertyType('house', profile.houses);
+  renderPropertyType('unit', profile.units);
+}
+
+function localHeadline(score) {
+  if (score <= 20) return 'Very soft local conditions';
+  if (score <= 40) return 'Buyer-friendly local conditions';
+  if (score <= 60) return 'Mixed local conditions';
+  if (score <= 80) return 'Competitive local conditions';
+  return 'Very hot local conditions';
+}
+
+function renderPropertyType(prefix, p) {
+  $(`${prefix}Growth`).textContent = `${p.annualGrowth >= 0 ? '+' : ''}${p.annualGrowth.toFixed(1)}% / yr`;
+  $(`${prefix}Growth`).className = `metric-chip ${p.annualGrowth >= 0 ? 'positive' : 'negative'}`;
+  $(`${prefix}Metrics`).innerHTML = [
+    ['Median', formatMoney(p.median)], ['For sale', p.listings], ['Sold / 12m', p.sold], ['Days on market', p.days],
+    ['Buyer interest', p.buyers.toLocaleString('en-AU')], ['Rent / week', `$${p.rent.toLocaleString('en-AU')}`], ['Gross yield', `${p.yield.toFixed(1)}%`]
+  ].map(([label, value]) => `<div><small>${esc(label)}</small><strong>${esc(value)}</strong></div>`).join('');
+}
+
+function formatMoney(n) {
+  if (n >= 1000000) return `$${(n/1000000).toFixed(2).replace(/0$/, '').replace(/\.0$/, '')}m`;
+  return `$${Math.round(n/1000)}k`;
+}
+
+function handleSuburbSearch(e) {
+  e.preventDefault();
+  const found = findSuburb($('suburbSearch').value);
+  if (!found) {
+    $('suburbResult').hidden = true; $('suburbNotFound').hidden = false;
+    return;
+  }
+  $('suburbSearch').value = `${found.profile.name} ${found.profile.postcode}`;
+  renderSuburb(found.profile, found.key);
+}
+
+$('refreshBtn').addEventListener('click', refreshData);
+$('methodBtn').addEventListener('click', () => $('methodDialog').showModal());
+$('closeMethod').addEventListener('click', () => $('methodDialog').close());
+$('methodDialog').addEventListener('click', (e) => { if (e.target === $('methodDialog')) $('methodDialog').close(); });
+$('exportHistory').addEventListener('click', exportHistory);
+$('suburbForm').addEventListener('submit', handleSuburbSearch);
+document.querySelectorAll('.region-tab').forEach(btn => btn.addEventListener('click', () => switchRegion(btn.dataset.region)));
+
+setupSuburbOptions();
+renderSuburb(SUBURBS[currentSuburbKey], currentSuburbKey);
+if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('/sw.js').catch(() => {});
+render(VERIFIED_SNAPSHOT);
+
+  </script>
+</body>
+</html>
