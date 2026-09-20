@@ -1,0 +1,17 @@
+{
+  "name": "Property Pulse AU",
+  "short_name": "Property Pulse",
+  "description": "Australian property market sentiment, city heat and suburb price performance.",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#06101d",
+  "theme_color": "#07101d",
+  "categories": ["finance", "business"],
+  "icons": [
+    {"src":"/icon-192.png","sizes":"192x192","type":"image/png","purpose":"any"},
+    {"src":"/icon-512.png","sizes":"512x512","type":"image/png","purpose":"any"},
+    {"src":"/icon-512-maskable.png","sizes":"512x512","type":"image/png","purpose":"maskable"}
+  ]
+}
